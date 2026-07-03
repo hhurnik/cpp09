@@ -15,7 +15,6 @@ PmergeMe::Node::Node(const Node &other) : value(other.value), id(other.id) {}
 
 PmergeMe::Node &PmergeMe::Node::operator=(const Node &other)
 {
-    // Avoid unnecessary work during self-assignment
     if (this != &other)
     {
         value = other.value;
@@ -29,11 +28,9 @@ PmergeMe::Node::~Node() {}
 
 PmergeMe::Pending::Pending() : node(), partnerId(0), hasPartner(false) {}
 
-PmergeMe::Pending::Pending(const Node &valueNode, std::size_t identifier, bool bounded)
-    : node(valueNode), partnerId(identifier), hasPartner(bounded) {}
+PmergeMe::Pending::Pending(const Node &valueNode, std::size_t identifier, bool bounded) : node(valueNode), partnerId(identifier), hasPartner(bounded) {}
 
-PmergeMe::Pending::Pending(const Pending &other)
-    : node(other.node), partnerId(other.partnerId), hasPartner(other.hasPartner) {}
+PmergeMe::Pending::Pending(const Pending &other) : node(other.node), partnerId(other.partnerId), hasPartner(other.hasPartner) {}
 
 PmergeMe::Pending &PmergeMe::Pending::operator=(const Pending &other)
 {
@@ -60,7 +57,6 @@ PmergeMe::PmergeMe(const PmergeMe &other)
 
 PmergeMe &PmergeMe::operator=(const PmergeMe &other)
 {
-    // Avoid unnecessary work during self-assignment
     if (this != &other)
     {
         _input = other._input;
@@ -77,7 +73,7 @@ PmergeMe::~PmergeMe() {}
 
 unsigned int PmergeMe::parsePositiveInteger(const std::string &token)
 {
-    // Empty tokens cannot represent integers
+    //empty tokens cannot represent integers
     if (token.empty())
         throw std::runtime_error("Error");
 
@@ -85,20 +81,20 @@ unsigned int PmergeMe::parsePositiveInteger(const std::string &token)
 
     for (std::string::size_type i = 0; i < token.size(); ++i)
     {
-        // Reject signs, decimal points and every non-digit character
+        //reject signs, decimal points and every non-digit character
         if (token[i] < '0' || token[i] > '9')
             throw std::runtime_error("Error");
 
         const unsigned long digit = token[i] - '0';
 
-        // Reject values that cannot fit into a signed positive integer
+        //reject values that cannot fit into a signed positive integer
         if (value > (static_cast<unsigned long>(INT_MAX) - digit) / 10)
             throw std::runtime_error("Error");
 
         value = value * 10 + digit;
     }
 
-    // The subject requires strictly positive integers
+    //the subject requires strictly positive integers
     if (value == 0)
         throw std::runtime_error("Error");
 
@@ -111,14 +107,14 @@ void PmergeMe::parseArgument(const std::string &argument)
     std::string token;
     bool foundToken = false;
 
-    // Supporting whitespace inside one argument makes input handling robust
+    //supporting whitespace inside one argument makes input handling robust
     while (input >> token)
     {
         foundToken = true;
         _input.push_back(parsePositiveInteger(token));
     }
 
-    // Reject empty or whitespace-only arguments
+    //reject empty or whitespace-only arguments
     if (!foundToken)
         throw std::runtime_error("Error");
 }
@@ -127,7 +123,7 @@ void PmergeMe::parseArguments(int argc, char **argv)
 {
     _input.clear();
 
-    // At least one positive integer must be supplied
+    //at least one positive integer must be supplied
     if (argc < 2)
         throw std::runtime_error("Error");
 
@@ -142,8 +138,7 @@ void PmergeMe::printSequence(const std::string &label, const std::vector<unsigne
 {
     std::cout << label;
 
-    for (std::vector<unsigned int>::const_iterator it = sequence.begin();
-         it != sequence.end(); ++it)
+    for (std::vector<unsigned int>::const_iterator it = sequence.begin(); it != sequence.end(); ++it)
     {
         std::cout << " " << *it;
     }
@@ -155,7 +150,7 @@ void PmergeMe::insertVectorPend(std::vector<Node> &chain, const Pending &pending
 {
     std::size_t right = chain.size();
 
-    // Paired values only need to search before their larger partner
+    //aired values only need to search before their larger partner
     if (pending.hasPartner)
     {
         right = 0;
@@ -171,7 +166,7 @@ void PmergeMe::insertVectorPend(std::vector<Node> &chain, const Pending &pending
 
     std::size_t left = 0;
 
-    // Use an upper-bound binary search inside the valid prefix
+    //use an upper-bound binary search inside the valid prefix
     while (left < right)
     {
         const std::size_t middle = left + (right - left) / 2;
@@ -187,14 +182,14 @@ void PmergeMe::insertVectorPend(std::vector<Node> &chain, const Pending &pending
 
 std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> &input) const
 {
-    // A sequence of zero or one element is already sorted
+    //a sequence of zero or one element is already sorted
     if (input.size() <= 1)
         return input;
 
     std::vector<Node> largerValues;
     largerValues.reserve(input.size() / 2);
 
-    // Index smaller partners by the unique ID of their larger value
+    //index smaller partners by the unique ID of their larger value
     std::vector<Node> smallerByLargerId(_input.size());
     std::vector<char> hasSmallerPartner(_input.size(), 0);
 
@@ -203,7 +198,7 @@ std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> 
         Node smaller;
         Node larger;
 
-        // Compare each pair and separate its smaller and larger values
+        //compare each pair and separate its smaller and larger values
         if (input[i].value <= input[i + 1].value)
         {
             smaller = input[i];
@@ -220,7 +215,7 @@ std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> 
         hasSmallerPartner[larger.id] = 1;
     }
 
-    // Recursively sort the larger half of every pair
+    //recursively sort the larger half of every pair
     std::vector<Node> mainChain = fordJohnsonVector(largerValues);
     std::vector<Pending> pending;
     pending.reserve(mainChain.size() + input.size() % 2);
@@ -237,7 +232,7 @@ std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> 
         pending.push_back(entry);
     }
 
-    // An odd unpaired value is inserted without a partner bound
+    //an odd unpaired value is inserted without a partner bound
     if (input.size() % 2 != 0)
     {
         Pending entry;
@@ -250,14 +245,14 @@ std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> 
     if (pending.empty())
         return mainChain;
 
-    // The first smaller value is already known to precede its partner
+    //the first smaller value is already known to precede its partner
     mainChain.insert(mainChain.begin(), pending[0].node);
 
     std::size_t insertedUntil = 1;
     std::size_t jacobsthalPrevious = 1;
     std::size_t jacobsthalCurrent = 3;
 
-    // Insert pending values in reverse Jacobsthal groups
+    //insert pending values in reverse Jacobsthal groups
     while (insertedUntil < pending.size())
     {
         std::size_t groupEnd = jacobsthalCurrent;
@@ -270,8 +265,7 @@ std::vector<PmergeMe::Node> PmergeMe::fordJohnsonVector(const std::vector<Node> 
 
         insertedUntil = groupEnd;
 
-        const std::size_t nextJacobsthal =
-            jacobsthalCurrent + 2 * jacobsthalPrevious;
+        const std::size_t nextJacobsthal = jacobsthalCurrent + 2 * jacobsthalPrevious;
 
         jacobsthalPrevious = jacobsthalCurrent;
         jacobsthalCurrent = nextJacobsthal;
@@ -286,7 +280,7 @@ void PmergeMe::processVector()
     std::vector<Node> nodes;
     nodes.reserve(_input.size());
 
-    // Build vector nodes with unique IDs for pair tracking
+    //build vector nodes with unique IDs for pair tracking
     for (std::size_t i = 0; i < _input.size(); ++i)
     {
         Node node;
@@ -299,7 +293,7 @@ void PmergeMe::processVector()
     _vectorResult.clear();
     _vectorResult.reserve(sorted.size());
 
-    // Convert internal nodes back to the required integer sequence
+    //convert internal nodes back to the required integer sequence
     for (std::size_t i = 0; i < sorted.size(); ++i)
         _vectorResult.push_back(sorted[i].value);
 
@@ -312,7 +306,7 @@ void PmergeMe::insertDequePend(std::deque<Node> &chain, const Pending &pending) 
 {
     std::size_t right = chain.size();
 
-    // Paired values only need to search before their larger partner
+    //paired values only need to search before their larger partner
     if (pending.hasPartner)
     {
         right = 0;
@@ -328,7 +322,7 @@ void PmergeMe::insertDequePend(std::deque<Node> &chain, const Pending &pending) 
 
     std::size_t left = 0;
 
-    // Use an upper-bound binary search inside the valid prefix
+    //use an upper-bound binary search inside the valid prefix
     while (left < right)
     {
         const std::size_t middle = left + (right - left) / 2;
@@ -344,13 +338,13 @@ void PmergeMe::insertDequePend(std::deque<Node> &chain, const Pending &pending) 
 
 std::deque<PmergeMe::Node> PmergeMe::fordJohnsonDeque(const std::deque<Node> &input) const
 {
-    // A sequence of zero or one element is already sorted
+    //a sequence of zero or one element is already sorted
     if (input.size() <= 1)
         return input;
 
     std::deque<Node> largerValues;
 
-    // Index smaller partners by the unique ID of their larger value
+    //index smaller partners by the unique ID of their larger value
     std::deque<Node> smallerByLargerId(_input.size());
     std::deque<char> hasSmallerPartner(_input.size(), 0);
 
@@ -359,7 +353,7 @@ std::deque<PmergeMe::Node> PmergeMe::fordJohnsonDeque(const std::deque<Node> &in
         Node smaller;
         Node larger;
 
-        // Compare each pair and separate its smaller and larger values
+        //compare each pair and separate its smaller and larger values
         if (input[i].value <= input[i + 1].value)
         {
             smaller = input[i];
@@ -376,7 +370,7 @@ std::deque<PmergeMe::Node> PmergeMe::fordJohnsonDeque(const std::deque<Node> &in
         hasSmallerPartner[larger.id] = 1;
     }
 
-    // Recursively sort the larger half of every pair
+    //recursively sort the larger half of every pair
     std::deque<Node> mainChain = fordJohnsonDeque(largerValues);
     std::deque<Pending> pending;
 
@@ -392,7 +386,7 @@ std::deque<PmergeMe::Node> PmergeMe::fordJohnsonDeque(const std::deque<Node> &in
         pending.push_back(entry);
     }
 
-    // An odd unpaired value is inserted without a partner bound
+    //an odd unpaired value is inserted without a partner bound
     if (input.size() % 2 != 0)
     {
         Pending entry;
@@ -405,14 +399,14 @@ std::deque<PmergeMe::Node> PmergeMe::fordJohnsonDeque(const std::deque<Node> &in
     if (pending.empty())
         return mainChain;
 
-    // The first smaller value is already known to precede its partner
+    //the first smaller value is already known to precede its partner
     mainChain.push_front(pending[0].node);
 
     std::size_t insertedUntil = 1;
     std::size_t jacobsthalPrevious = 1;
     std::size_t jacobsthalCurrent = 3;
 
-    // Insert pending values in reverse Jacobsthal groups
+    //insert pending values in reverse Jacobsthal groups
     while (insertedUntil < pending.size())
     {
         std::size_t groupEnd = jacobsthalCurrent;
@@ -439,7 +433,7 @@ void PmergeMe::processDeque()
     const std::clock_t start = std::clock();
     std::deque<Node> nodes;
 
-    // Build deque nodes with unique IDs for pair tracking
+    //build deque nodes with unique IDs for pair tracking
     for (std::size_t i = 0; i < _input.size(); ++i)
     {
         Node node;
@@ -451,7 +445,7 @@ void PmergeMe::processDeque()
     const std::deque<Node> sorted = fordJohnsonDeque(nodes);
     _dequeResult.clear();
 
-    // Convert internal nodes back to the required integer sequence
+    //convert internal nodes back to the required integer sequence
     for (std::size_t i = 0; i < sorted.size(); ++i)
         _dequeResult.push_back(sorted[i].value);
 
@@ -462,17 +456,17 @@ void PmergeMe::processDeque()
 
 void PmergeMe::verifyResults() const
 {
-    // Both containers must contain exactly the same number of values
+    //both containers must contain exactly the same number of values
     if (_vectorResult.size() != _dequeResult.size())
         throw std::runtime_error("Error");
 
     for (std::size_t i = 0; i < _vectorResult.size(); ++i)
     {
-        // Both independent implementations must produce equal results
+        //both independent implementations must produce equal results
         if (_vectorResult[i] != _dequeResult[i])
             throw std::runtime_error("Error");
 
-        // Verify that the resulting sequence is non-decreasing
+        //verify that the resulting sequence is non-decreasing
         if (i > 0 && _vectorResult[i - 1] > _vectorResult[i])
             throw std::runtime_error("Error");
     }
@@ -490,7 +484,7 @@ void PmergeMe::run(int argc, char **argv)
 
     printSequence("After:", _vectorResult);
 
-    // Use enough precision to make the timing difference visible
+    //use enough precision to make the timing difference visible
     std::cout << std::fixed << std::setprecision(5);
     std::cout << "Time to process a range of " << _input.size() << " elements with std::vector : "
               << _vectorTime << " us" << std::endl;
