@@ -5,7 +5,6 @@
 
 int main(int argc, char **argv)
 {
-    // The program requires exactly one RPN expression
     if (argc != 2)
     {
         std::cerr << "Error" << std::endl;
@@ -21,7 +20,6 @@ int main(int argc, char **argv)
     }
     catch (const std::exception &exception)
     {
-        // Every malformed expression is reported as an error
         std::cerr << exception.what() << std::endl;
         return 1;
     }

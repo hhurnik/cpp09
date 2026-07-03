@@ -1,7 +1,7 @@
 #include "RPN.hpp"
 
 #include <climits>
-#include <sstream>
+#include <cctype>
 #include <stdexcept>
 
 RPN::RPN() {}
@@ -10,7 +10,6 @@ RPN::RPN(const RPN &other) : _operands(other._operands) {}
 
 RPN &RPN::operator=(const RPN &other)
 {
-    // Avoid unnecessary work during self-assignment
     if (this != &other)
         _operands = other._operands;
 
@@ -19,34 +18,28 @@ RPN &RPN::operator=(const RPN &other)
 
 RPN::~RPN() {}
 
-bool RPN::isOperator(const std::string &token)
+bool RPN::isOperator(char character)
 {
-    // Operators must be represented by exactly one character
-    if (token.size() != 1)
-        return false;
-
-    return (token[0] == '+' || token[0] == '-' || token[0] == '*' || token[0] == '/');
+    return (character == '+' || character == '-' || character == '*' || character == '/');
 }
 
 void RPN::applyOperator(char operation)
 {
-    // Every binary operator requires two operands
+    //every binary operator requires two operands
     if (_operands.size() < 2)
         throw std::runtime_error("Error");
 
-    // The right operand is stored at the top of the stack
+    //the right operand is stored at the top of the stack
     const int right = _operands.top();
     _operands.pop();
 
-    // The next value is the left operand
+
     const int left = _operands.top();
     _operands.pop();
 
-    // Division by zero is invalid
     if (operation == '/' && right == 0)
         throw std::runtime_error("Error");
 
-    // Reject addition that would overflow an int
     if (operation == '+')
     {
         if ((right > 0 && left > INT_MAX - right) || (right < 0 && left < INT_MIN - right))
@@ -58,7 +51,6 @@ void RPN::applyOperator(char operation)
         return;
     }
 
-    // Reject subtraction that would overflow an int
     if (operation == '-')
     {
         if ((right > 0 && left < INT_MIN + right) || (right < 0 && left > INT_MAX + right))
@@ -70,7 +62,6 @@ void RPN::applyOperator(char operation)
         return;
     }
 
-    // Reject multiplication that would overflow an int
     if (operation == '*')
     {
         if ((left > 0 && right > 0 && left > INT_MAX / right)
@@ -85,7 +76,7 @@ void RPN::applyOperator(char operation)
         return;
     }
 
-    // INT_MIN divided by -1 is the only overflowing int division
+    //INT_MIN divided by -1 is the only overflowing int division
     if (left == INT_MIN && right == -1)
         throw std::runtime_error("Error");
 
@@ -94,33 +85,42 @@ void RPN::applyOperator(char operation)
 
 int RPN::evaluate(const std::string &expression)
 {
-    // Reset the object so repeated calls remain independent
+    //reset the stack before starting a new calculation
     while (!_operands.empty())
         _operands.pop();
 
-    std::istringstream input(expression);
-    std::string token;
     bool hasToken = false;
 
-    while (input >> token)
+    for (std::string::size_type i = 0; i < expression.size(); ++i)
     {
+        //ignore spaces, tabs and other whitespace characters
+        if (std::isspace(static_cast<unsigned char>(expression[i])))
+            continue;
+
+        const char current = expression[i];
         hasToken = true;
 
-        // Valid operands are single decimal digits from 0 to 9
-        if (token.size() == 1 && token[0] >= '0' && token[0] <= '9')
+        //every token must contain exactly one character, so the next character must be whitespace or the end
+        if (i + 1 < expression.size() && !std::isspace(static_cast<unsigned char>(expression[i + 1])))
         {
-            _operands.push(token[0] - '0');
+            throw std::runtime_error("Error");
+        }
+
+        //a number must be a single digit from 0 to 9
+        if (current >= '0' && current <= '9')
+        {
+            _operands.push(current - '0');
             continue;
         }
 
-        // Reject unknown tokens before trying to evaluate them
-        if (!isOperator(token))
+        //anything other than a digit or valid operator is invalid
+        if (!isOperator(current))
             throw std::runtime_error("Error");
 
-        applyOperator(token[0]);
+        applyOperator(current);
     }
 
-    // An empty expression or extra operands are invalid
+    //the expression cannot be empty and must leave one final result
     if (!hasToken || _operands.size() != 1)
         throw std::runtime_error("Error");
 
